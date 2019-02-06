@@ -1,0 +1,14 @@
+VertexLitGeneric
+{
+    $basetexture                "gmod4phun\contagion_gasmask\gasmask_fp_glass_diff"
+    $bumpmap                    "gmod4phun\contagion_gasmask\gasmask_fp_glass_norm"
+    $translucent "1"
+    $color2 "[.5 .5 1.25]"
+    $phongexponenttexture  "gmod4phun\contagion_gasmask\gasmask_fp_glass_exp"
+    $phong "1"
+    $phongtint "[1 .6 .5]"
+    $phongboost "10"
+    $phongfresnelranges "[.3 1 2]"
+    $surfaceprop "metal"
+    $nocull "1"
+}
