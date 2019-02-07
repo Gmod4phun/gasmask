@@ -1,0 +1,16 @@
+VertexLitGeneric
+{
+    $basetexture                "gmod4phun\contagion_gasmask\gasmask_diff"
+    $bumpmap                    "gmod4phun\contagion_gasmask\gasmask_norm"
+    $normalmapalphaenvmapmask   "1"
+    
+    $nocull                     "1"
+    $phong                      "1"
+    $phongfresnelranges         "[1 1 1]"
+    $phongboost                 "0"
+    $phongexponent              "0"
+    $phongtint                  "[1 1 1]"
+    $selfillum                  "0"
+    $selfillummask              "white"
+    $selfillumtint              "[1 1 1]"
+}

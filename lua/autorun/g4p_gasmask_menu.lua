@@ -1,9 +1,8 @@
 if CLIENT then
 	AddCSLuaFile()
 	
-	util.PrecacheModel("models/gmod4phun/c_contagion_gasmask.mdl")
-	
 	CreateClientConVar("g4p_gasmask_sndtype", "1", true, false)
+	CreateClientConVar("g4p_gasmask_drawtpmodel", 1, true, false)
 	
 	local function G4P_GASMASK_MENU_PANEL(panel)
 		panel:ClearControls()
@@ -24,6 +23,8 @@ if CLIENT then
 		slider:SetText("Breathing sound")
 		slider:SetTooltip("0 disables the sound")
 		panel:AddItem(slider)
+		
+		panel:AddControl("CheckBox", {Label = "Draw third person mask model?", Command = "g4p_gasmask_drawtpmodel"})
 	end
 	
 	local function G4P_GASMASK_PopulateToolMenu()
@@ -32,12 +33,17 @@ if CLIENT then
 	
 	hook.Add("PopulateToolMenu", "G4P_GASMASK_PopulateToolMenu", G4P_GASMASK_PopulateToolMenu)
 	
-	cvars.RemoveChangeCallback("g4p_gasmask_sndtype", "g4p_gasmask_sndtype_change_callbackidentifier")
+	cvars.RemoveChangeCallback("g4p_gasmask_sndtype", "g4p_gasmask_sndtype_change")
 	cvars.AddChangeCallback("g4p_gasmask_sndtype", function(cvar, old, new)
 		local ply = LocalPlayer()
 		if ply.GASMASK_BreathSound then
 			ply.GASMASK_BreathSound:Stop()
 			ply.GASMASK_BreathSound = nil
 		end
-	end, "g4p_gasmask_sndtype_change_callbackidentifier")
+	end, "g4p_gasmask_sndtype_change")
+	
+	cvars.RemoveChangeCallback("g4p_gasmask_drawtpmodel", "g4p_gasmask_drawtpmodel_change")
+	cvars.AddChangeCallback("g4p_gasmask_drawtpmodel", function(cvar, old, new)
+		LocalPlayer():SetNWBool("GASMASK_DrawTPModel", tobool(new))
+	end, "g4p_gasmask_drawtpmodel_change")
 end

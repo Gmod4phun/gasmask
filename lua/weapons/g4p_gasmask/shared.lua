@@ -1,5 +1,18 @@
 AddCSLuaFile()
 
+if SERVER then
+	util.AddNetworkString("GASMASK_RequestWeaponSelect")
+end
+
+if CLIENT then
+	net.Receive("GASMASK_RequestWeaponSelect", function()
+		local wep = net.ReadEntity()
+		if IsValid(wep) then
+			input.SelectWeapon(wep)
+		end
+	end)
+end
+
 // sounds
 local sndpath = "gmod4phun/gasmask/"
 sound.Add({
@@ -65,10 +78,9 @@ sound.Add({
 	sound = sndpath.."breathe_mask_loop.wav"
 })
 
-SWEP.HoldType = "slam"
+SWEP.HoldType = "camera"
 
-SWEP.DrawCrosshair		= false
-SWEP.Crosshair			= false
+SWEP.DrawCrosshair		= true
 SWEP.DrawAmmo			= false
 SWEP.PrintName			= "Gas Mask"
 SWEP.Slot 				= 99
@@ -91,8 +103,8 @@ SWEP.Spawnable = false
 SWEP.AdminSpawnable = false
 
 SWEP.ViewModel			= "models/gmod4phun/c_contagion_gasmask.mdl"
-SWEP.WorldModel			= "models/weapons/c_arms_animations.mdl"
-SWEP.UseHands = true
+SWEP.WorldModel			= "models/gmod4phun/w_contagion_gasmask.mdl"
+SWEP.UseHands = false
 
 SWEP.Primary.Recoil 		= 0
 SWEP.Primary.Damage 		= 0
@@ -106,23 +118,16 @@ SWEP.Primary.Ammo 			= "none"
 
 SWEP.Secondary.Ammo 			= "none"
 
+function SWEP:DoDrawCrosshair(x, y)
+	return true
+end
+
 function SWEP:GetViewModelPosition( pos, ang )
 	return pos, ang
 end
 
 function SWEP:Initialize()
 	self:SetWeaponHoldType(self.HoldType)
-end
-
-function SWEP:DelayedFunc(time, func)
-	timer.Simple(time, function() if !IsValid(self) then return end func(self) end)
-end
-
-function SWEP:PlayAnim(anim)
-	local vm = self.Owner:GetViewModel()
-	if IsValid(vm) then
-		vm:SendViewModelMatchingSequence(vm:LookupSequence(anim))
-	end
 end
 
 function SWEP:SelectClientWeapon(weapon)
@@ -141,28 +146,21 @@ function SWEP:Deploy()
 		local ply = self.Owner
 		if !self.GASMASK_SignalForDeploy then ply:StripWeapon(self:GetClass()) return end
 		
-		ply.GASMASK_Ready = false
-		ply.GASMASK_Equiped = !ply.GASMASK_Equiped
-		
-		if ply.GASMASK_Equiped then
-			self:PlayAnim("draw")
-			self:EmitSound("GASMASK_DrawHolster")
-			self:DelayedFunc(0.3, function() self:PlayAnim("put_on") self:EmitSound("GASMASK_Foley") end)
-			self:DelayedFunc(0.6, function() self:EmitSound("GASMASK_Inhale") end)
-			self:DelayedFunc(1.2, function() ply:ScreenFade(SCREENFADE.OUT, color_black, 0.2, 0.4) self:EmitSound("GASMASK_OnOff") end)
-			self:DelayedFunc(1.79, function() ply:GASMASK_RequestModelDraw(true) end)
-		else
-			self:PlayAnim("take_off")
-			self:EmitSound("GASMASK_OnOff")
-			ply:GASMASK_RequestModelDraw(false)
-			ply:ScreenFade(SCREENFADE.IN, color_black, 0.25, 0.25)
-			self:DelayedFunc(0.3, function() self:EmitSound("GASMASK_Foley") end)
-			self:DelayedFunc(0.45, function() self:EmitSound("GASMASK_Exhale") end)
-			self:DelayedFunc(1.2, function() self:EmitSound("GASMASK_DrawHolster") end)
-			self:DelayedFunc(1.25, function() self:PlayAnim("holster") end)
+		local vm = ply:GetViewModel()
+		if IsValid(vm) then
+			vm:SendViewModelMatchingSequence(vm:LookupSequence("idle_holstered"))
 		end
 		
-		self:DelayedFunc(1.8, function() ply.GASMASK_Ready = true self:SelectClientWeapon(ply.GASMASK_LastWeapon) self:Remove() end)
+		ply.GASMASK_Ready = false
+		ply:GASMASK_SetEquipped(!ply.GASMASK_Equiped)
+		ply:GASMASK_RequestToggle()
+		
+		timer.Simple(1.8, function()
+			if !IsValid(self) then return end
+			ply.GASMASK_Ready = true
+			self:SelectClientWeapon(ply.GASMASK_LastWeapon)
+			ply:StripWeapon(self:GetClass())
+		end)
 	end
 	
 	return false

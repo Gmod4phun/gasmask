@@ -1,17 +1,40 @@
-net.Receive("GASMASK_RequestModelDraw", function()
+local meta = FindMetaTable("Player")
+function meta:GASMASK_PlayAnim(anim)
+	local mask = self.GASMASK_HudModel
+	if mask and IsValid(mask) then
+		mask:ResetSequence(anim)
+		mask:SetCycle(0)
+		mask:SetPlaybackRate(1)
+	end
+end
+
+function meta:GASMASK_DelayedFunc(time, func)
+	timer.Simple(time, function() if !IsValid(self) or !self:Alive() then return end func(self) end)
+end
+
+net.Receive("GASMASK_RequestToggle", function()
 	local ply = LocalPlayer()
-	ply.GASMASK_ShouldDraw = net.ReadBool()
-	if !ply.GASMASK_ShouldDraw and ply.GASMASK_BreathSound then
-		ply.GASMASK_BreathSound:Stop()
-		ply.GASMASK_BreathSound = nil
+	local state = net.ReadBool()
+	
+	if state then
+		ply:GASMASK_PlayAnim("draw")
+		ply:EmitSound("GASMASK_DrawHolster")
+		ply:GASMASK_DelayedFunc(0.3, function() ply:GASMASK_PlayAnim("put_on") ply:EmitSound("GASMASK_Foley") end)
+		ply:GASMASK_DelayedFunc(0.6, function() ply:EmitSound("GASMASK_Inhale") end)
+		ply:GASMASK_DelayedFunc(1.2, function() ply:EmitSound("GASMASK_OnOff") end)
+		ply:GASMASK_DelayedFunc(1.79, function() ply:GASMASK_PlayAnim("idle_on") end)
+	else
+		ply:GASMASK_PlayAnim("take_off")
+		ply:EmitSound("GASMASK_OnOff")
+		ply:GASMASK_DelayedFunc(0.3, function() ply:EmitSound("GASMASK_Foley") end)
+		ply:GASMASK_DelayedFunc(0.45, function() ply:EmitSound("GASMASK_Exhale") end)
+		ply:GASMASK_DelayedFunc(1.2, function() ply:EmitSound("GASMASK_DrawHolster") end)
+		ply:GASMASK_DelayedFunc(1.25, function() ply:GASMASK_PlayAnim("holster") end)
 	end
 end)
 
-net.Receive("GASMASK_RequestWeaponSelect", function()
-	local wep = net.ReadEntity()
-	if IsValid(wep) then
-		input.SelectWeapon(wep)
-	end
+net.Receive("GASMASK_SendEquippedStatus", function()
+	LocalPlayer().GASMASK_Equiped = net.ReadBool()
 end)
 
 local function GASMASK_CalcHorizontalFromVerticalFOV( num ) // calculates the camera FOV depending on viewmodel FOV
@@ -25,6 +48,22 @@ local function GASMASK_CalcHorizontalFromVerticalFOV( num ) // calculates the ca
 	return hFoV
 end
 
+local function GASMASK_GetPlayerColor()
+	local owner = LocalPlayer()
+	if owner:IsValid() and owner:IsPlayer() and owner.GetPlayerColor then
+		return owner:GetPlayerColor()
+	end
+
+	return Vector(1, 1, 1)
+end
+
+local function GASMASK_CopyBodyGroups(source, target)
+	for num, _ in pairs(source:GetBodyGroups()) do
+		target:SetBodygroup(num-1, source:GetBodygroup(num-1))
+		target:SetSkin(source:GetSkin())
+	end
+end
+
 local function GASMASK_DrawInHud()
 	local ply = LocalPlayer()
 	if !IsValid(ply) then return end
@@ -32,26 +71,48 @@ local function GASMASK_DrawInHud()
 	if !ply.GASMASK_HudModel or !IsValid(ply.GASMASK_HudModel) then
 		ply.GASMASK_HudModel = ClientsideModel("models/gmod4phun/c_contagion_gasmask.mdl", RENDERGROUP_BOTH)
 		ply.GASMASK_HudModel:SetNoDraw(true)
+		ply:GASMASK_PlayAnim("idle_holstered")
 	end
 	
 	local mask = ply.GASMASK_HudModel
 	if !IsValid(mask) then return end
 	
-	local pos, ang = EyePos(), EyeAngles()
+	if !ply.GASMASK_HandsModel or !IsValid(ply.GASMASK_HandsModel) then
+		local gmhands = ply:GetHands()
+		if IsValid(gmhands) then
+			ply.GASMASK_HandsModel = ClientsideModel(gmhands:GetModel(), RENDERGROUP_BOTH)
+			ply.GASMASK_HandsModel:SetNoDraw(true)
+			ply.GASMASK_HandsModel:SetParent(mask)
+			ply.GASMASK_HandsModel:AddEffects(EF_BONEMERGE)
+			GASMASK_CopyBodyGroups(gmhands, ply.GASMASK_HandsModel)
+			ply.GASMASK_HandsModel.GetPlayerColor = GASMASK_GetPlayerColor
+		end
+	end
 	
+	local hands = ply.GASMASK_HandsModel
+	
+	if !ply:Alive() then
+		ply:GASMASK_PlayAnim("idle_holstered")
+	end
+	
+	local pos, ang = EyePos(), EyeAngles()
 	local maskwep = weapons.GetStored("g4p_gasmask")
 	local camFOV = GASMASK_CalcHorizontalFromVerticalFOV(maskwep.ViewModelFOV)
+	local scrw, scrh = ScrW(), ScrH()	
+	local FT = FrameTime()
 	
-	cam.Start3D( pos, ang, camFOV, 0, 0, ScrW(), ScrH(), 1, 100)
+	cam.Start3D( pos, ang, camFOV, 0, 0, scrw, scrh, 1, 100)
 		cam.IgnoreZ(false)
 			render.SuppressEngineLighting( false )
 				mask:SetPos(pos)
 				mask:SetAngles(ang)
-				mask:FrameAdvance(FrameTime())
+				mask:FrameAdvance(FT)
 				mask:SetupBones()
-				mask:ResetSequence("idle_on")
-				if ply.GASMASK_ShouldDraw and ply:GetViewEntity() == ply then
+				if ply:GetViewEntity() == ply then
 					mask:DrawModel()
+					if IsValid(hands) then
+						hands:DrawModel()
+					end
 				end
 			render.SuppressEngineLighting( false )
 		cam.IgnoreZ(false)
@@ -73,11 +134,14 @@ local function GASMASK_BreathThink()
 	
 	local sndtype = GetConVar("g4p_gasmask_sndtype"):GetInt()
 	
+	local mask = ply.GASMASK_HudModel
+	if !IsValid(mask) then return end
+	
 	if !ply.GASMASK_BreathSound and sndtype > 0 then
 		ply.GASMASK_BreathSound = CreateSound(ply, maskbreathsounds[sndtype])
 	end
 	
-	local shouldplay = ply.GASMASK_ShouldDraw and sndtype > 0
+	local shouldplay = mask:GetSequenceName(mask:GetSequence()) == "idle_on" and sndtype > 0
 	
 	local snd = ply.GASMASK_BreathSound
 	if snd then
@@ -91,4 +155,24 @@ end
 
 hook.Add("Think", "GASMASK_BreathSoundThink", function()
 	GASMASK_BreathThink()
+end)
+
+// equipped gas mask model on face
+
+hook.Add("PostDrawTranslucentRenderables", "GASMASK_ThirdPersonMaskThink", function()
+	for _, ply in pairs(player.GetHumans()) do
+		if !ply.GASMASK_FaceModel or !IsValid(ply.GASMASK_FaceModel) then
+			ply.GASMASK_FaceModel = ClientsideModel("models/gmod4phun/w_contagion_gasmask_equipped.mdl", RENDERGROUP_BOTH)
+			ply.GASMASK_FaceModel:SetNoDraw(true)
+			ply.GASMASK_FaceModel:SetParent(ply)
+			ply.GASMASK_FaceModel:AddEffects(EF_BONEMERGE)
+		end
+		
+		local mask = ply.GASMASK_FaceModel
+		if !IsValid(mask) then return end
+		
+		if ply:Alive() and ply.GASMASK_Equiped and ply:GetNWBool("GASMASK_DrawTPModel", true) then
+			mask:DrawModel()
+		end
+	end
 end)
