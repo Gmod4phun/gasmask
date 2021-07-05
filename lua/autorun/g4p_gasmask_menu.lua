@@ -17,7 +17,7 @@ if CLIENT then
 		local slider = vgui.Create("DNumSlider", panel)
 		slider:SetDecimals(0)
 		slider:SetMin(0)
-		slider:SetMax(2)
+		slider:SetMax(5)
 		slider:SetConVar("g4p_gasmask_sndtype")
 		slider:SetValue(GetConVar("g4p_gasmask_sndtype"):GetInt())
 		slider:SetText("Breathing sound")

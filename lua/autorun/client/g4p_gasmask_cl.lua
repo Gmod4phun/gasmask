@@ -109,10 +109,11 @@ local function GASMASK_DrawInHud()
 				mask:FrameAdvance(FT)
 				mask:SetupBones()
 				if ply:GetViewEntity() == ply then
-					mask:DrawModel()
+					// first draw hands, then mask
 					if IsValid(hands) then
 						hands:DrawModel()
 					end
+					mask:DrawModel()
 				end
 			render.SuppressEngineLighting( false )
 		cam.IgnoreZ(false)
@@ -126,6 +127,9 @@ end)
 local maskbreathsounds = {
 	[1] = "GASMASK_BreathingLoop",
 	[2] = "GASMASK_BreathingLoop2",
+	[3] = "GASMASK_BreathingMetroLight",
+	[4] = "GASMASK_BreathingMetroMiddle",
+	[5] = "GASMASK_BreathingMetroHard",
 }
 
 local function GASMASK_BreathThink()

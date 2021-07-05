@@ -78,6 +78,33 @@ sound.Add({
 	sound = sndpath.."breathe_mask_loop.wav"
 })
 
+sound.Add({
+	name = "GASMASK_BreathingMetroLight",
+	channel = CHAN_AUTO,
+	volume = 1,
+	level = 100,
+	pitch = 100,
+	sound = sndpath.."metro_gas_mask_light.wav"
+})
+
+sound.Add({
+	name = "GASMASK_BreathingMetroMiddle",
+	channel = CHAN_AUTO,
+	volume = 1,
+	level = 100,
+	pitch = 100,
+	sound = sndpath.."metro_gas_mask_middle.wav"
+})
+
+sound.Add({
+	name = "GASMASK_BreathingMetroHard",
+	channel = CHAN_AUTO,
+	volume = 1,
+	level = 100,
+	pitch = 100,
+	sound = sndpath.."metro_gas_mask_hard.wav"
+})
+
 SWEP.HoldType = "camera"
 
 SWEP.DrawCrosshair		= true
