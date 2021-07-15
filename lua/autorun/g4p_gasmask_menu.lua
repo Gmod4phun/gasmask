@@ -3,6 +3,7 @@ if CLIENT then
 	
 	CreateClientConVar("g4p_gasmask_sndtype", "1", true, false)
 	CreateClientConVar("g4p_gasmask_drawtpmodel", 1, true, false)
+	CreateClientConVar("g4p_gasmask_drawhudmodel", 1, true, false)
 	
 	local function G4P_GASMASK_MENU_PANEL(panel)
 		panel:ClearControls()
@@ -23,8 +24,10 @@ if CLIENT then
 		slider:SetText("Breathing sound")
 		slider:SetTooltip("0 disables the sound")
 		panel:AddItem(slider)
+
+		panel:AddControl("CheckBox", {Label = "Draw first person (HUD) mask model?", Command = "g4p_gasmask_drawhudmodel"})
 		
-		panel:AddControl("CheckBox", {Label = "Draw third person mask model?", Command = "g4p_gasmask_drawtpmodel"})
+		panel:AddControl("CheckBox", {Label = "Draw third person mask model (on player's face)?", Command = "g4p_gasmask_drawtpmodel"})
 	end
 	
 	local function G4P_GASMASK_PopulateToolMenu()

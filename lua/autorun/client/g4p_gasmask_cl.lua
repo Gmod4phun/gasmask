@@ -67,6 +67,8 @@ end
 local function GASMASK_DrawInHud()
 	local ply = LocalPlayer()
 	if !IsValid(ply) then return end
+
+	if !GetConVar("g4p_gasmask_drawhudmodel"):GetBool() then return end
 	
 	if !ply.GASMASK_HudModel or !IsValid(ply.GASMASK_HudModel) then
 		ply.GASMASK_HudModel = ClientsideModel("models/gmod4phun/c_contagion_gasmask.mdl", RENDERGROUP_BOTH)
@@ -100,6 +102,7 @@ local function GASMASK_DrawInHud()
 	local camFOV = GASMASK_CalcHorizontalFromVerticalFOV(maskwep.ViewModelFOV)
 	local scrw, scrh = ScrW(), ScrH()	
 	local FT = FrameTime()
+	local wep = ply:GetActiveWeapon()
 	
 	cam.Start3D( pos, ang, camFOV, 0, 0, scrw, scrh, 1, 100)
 		cam.IgnoreZ(false)
@@ -108,12 +111,14 @@ local function GASMASK_DrawInHud()
 				mask:SetAngles(ang)
 				mask:FrameAdvance(FT)
 				mask:SetupBones()
-				if ply:GetViewEntity() == ply then
-					// first draw hands, then mask
-					if IsValid(hands) then
-						hands:DrawModel()
+				if ply.GASMASK_Equiped or (IsValid(wep) and wep:GetClass() == "g4p_gasmask") then
+					if ply:GetViewEntity() == ply then
+						// first draw hands, then mask
+						if IsValid(hands) then
+							hands:DrawModel()
+						end
+						mask:DrawModel()
 					end
-					mask:DrawModel()
 				end
 			render.SuppressEngineLighting( false )
 		cam.IgnoreZ(false)

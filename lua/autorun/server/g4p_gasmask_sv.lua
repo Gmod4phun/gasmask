@@ -37,9 +37,22 @@ concommand.Add("g4p_gasmask_toggle", function(ply)
 			ply.GASMASK_LastWeapon = wep
 			ply:StripWeapon(gasmask_class)
 			ply:SetSuppressPickupNotices(true)
-			ply:Give(gasmask_class).GASMASK_SignalForDeploy = true
-			ply:SetSuppressPickupNotices(false)
-			ply:SelectWeapon(gasmask_class)
+
+			// manual weapon pickup fix
+			if ConVarExists("sv_manualweaponpickup") then 
+				ply:Give(gasmask_class)
+				timer.Simple(0.1, function()
+					local mask = ply:GetWeapon(gasmask_class)
+					mask.GASMASK_SignalForDeploy = true
+					ply:SetSuppressPickupNotices(false)
+					ply:SelectWeapon(gasmask_class)
+				end)
+			else // default behaviour
+				ply:Give(gasmask_class).GASMASK_SignalForDeploy = true
+				ply:SetSuppressPickupNotices(false)
+				ply:SelectWeapon(gasmask_class)
+			end
+
 		end
 	end
 end)
